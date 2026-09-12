@@ -19,7 +19,7 @@ QQ User → QQ WebSocket → dsh-im-qqbot → ctx.agents → dsh agent loop → 
 
 ```bash
 # Add to a profile
-dsh plugin --profile qqbot add dsh-qqbot-dafeiyu
+dsh plugin --profile qqbot add github:cheesewoo/dsh-qqbot-dafeiyu
 
 # Start
 dsh --profile qqbot

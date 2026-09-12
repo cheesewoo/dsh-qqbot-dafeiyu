@@ -1,4 +1,5 @@
 import { sendMarkdownChunked } from '../shared/index.js';
+import { PKG_VERSION } from '../shared/version.js';
 /** /bot-help — 查看所有指令以及用途 */
 export function helpCommand({ config }, allCommands) {
     return {
@@ -12,7 +13,7 @@ export function helpCommand({ config }, allCommands) {
                     continue;
                 lines.push(`<qqbot-cmd-input text="/${name}" show="/${name}"/> ${cmd.description ?? ''}`);
             }
-            lines.push('', '> dsh-qqbot v0.5.0');
+            lines.push('', `> dsh-qqbot v${PKG_VERSION}`);
             await sendMarkdownChunked(cmdCtx, lines.join('\n'), config.textChunkLimit);
             return { kind: 'noop' };
         },

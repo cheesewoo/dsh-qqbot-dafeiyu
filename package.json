@@ -1,7 +1,7 @@
 {
-  "name": "@tencent-connect/dsh-qqbot",
-  "version": "0.5.0",
-  "description": "QQ Bot IM channel plugin for deepseek-harness (dsh) — consolidated local build (ESM JS-maintained, no TS build step)",
+  "name": "dsh-qqbot-dafeiyu",
+  "version": "0.6.0",
+  "description": "QQ Bot (QQ 机器人) IM channel plugin for DeepSeek Harness (dsh): per-peer sessions, group @-mention and keyword triggers, image generation, TTS voice replies, attachment handling.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -12,9 +12,13 @@
     }
   },
   "keywords": [
+    "dsh-plugin",
     "deepseek-harness",
     "dsh",
     "qqbot",
+    "qq",
+    "im",
+    "chatbot",
     "cordis",
     "plugin"
   ],

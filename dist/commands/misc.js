@@ -1,3 +1,4 @@
+import { PKG_VERSION } from '../shared/version.js';
 /** /bot-ping — 连通性测试 */
 export function pingCommand() {
     return {
@@ -14,7 +15,7 @@ export function versionCommand({ manager }) {
         handler: () => {
             const current = manager.getEffectiveModel('c2c', '');
             const modelInfo = current ? `${current.provider}/${current.model}` : '宿主默认';
-            return `dsh-qqbot v0.5.0 | model: ${modelInfo}`;
+            return `dsh-qqbot v${PKG_VERSION} | model: ${modelInfo}`;
         },
     };
 }

@@ -42,7 +42,7 @@ export const ConfigSchema = Schema.object({
     imageGenWidth: Schema.number().default(768).description('生图默认宽度'),
     imageGenHeight: Schema.number().default(768).description('生图默认高度'),
     // ── 群聊触发：关键词 + 热闹模式（requireMention=true 时生效） ──
-    groupTriggerKeywords: Schema.string().default('大肥鱼,745,cheesewoo,画画,画图').description('群聊关键词触发（逗号分隔，命中即响应，无需@）'),
+    groupTriggerKeywords: Schema.string().default('大肥鱼,画画,画图').description('群聊关键词触发（逗号分隔，命中即响应，无需@）'),
     groupBurstWindowMs: Schema.number().default(30000).description('群聊热闹判定窗口(ms)：窗口内消息达 groupBurstCount 条即触发'),
     groupBurstCount: Schema.number().default(4).description('热闹窗口内消息条数阈值'),
     groupBurstActiveMs: Schema.number().default(3 * 60 * 1000).description('热闹模式持续时长(ms)'),

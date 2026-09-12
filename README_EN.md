@@ -1,4 +1,4 @@
-# @tencent-connect/dsh-qqbot
+# dsh-qqbot-dafeiyu
 
 A QQ Bot IM plugin for [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) (dsh), driving the dsh agent loop with the QQ messaging platform as the frontend protocol.
 
@@ -19,7 +19,7 @@ QQ User → QQ WebSocket → dsh-im-qqbot → ctx.agents → dsh agent loop → 
 
 ```bash
 # Add to a profile
-dsh plugin --profile qqbot add @tencent-connect/dsh-qqbot
+dsh plugin --profile qqbot add dsh-qqbot-dafeiyu
 
 # Start
 dsh --profile qqbot

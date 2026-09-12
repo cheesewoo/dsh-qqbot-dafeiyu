@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build / test scratch
+*.log
+*.tmp
+*.tsbuildinfo
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local secrets and environment overrides
+.env
+.env.*
+cordis.patch.local.yml
+
+# Local backups (never publish these)
+*.bak
+*.bak-*
+*.before-revert-*
+*.orig
+*.old

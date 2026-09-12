@@ -21,7 +21,7 @@ $:
         - name: 发布 npm 包
           script: npm publish --access public
         - name: 生成通知
-          script: echo "@tencent-connect/dsh-qqbot@${ORANGE_BRANCH} 发布成功" > message.txt
+          script: echo "dsh-qqbot-dafeiyu@${ORANGE_BRANCH} 发布成功" > message.txt
         - name: 发送通知
           type: wework:message
           options:

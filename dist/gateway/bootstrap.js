@@ -4,13 +4,27 @@ import { handleInbound, createOutboundHandler } from '../transport/index.js';
 import { buildUserAgent } from '../shared/index.js';
 import { setupMiddlewares } from './middleware-setup.js';
 import { BehaviorController } from '../behavior/controller.js';
-import { mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
+import { mkdirSync, writeFileSync, readFileSync, existsSync, appendFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { spawn } from 'node:child_process';
 import { defineTool } from '@deepseek-ai/dsh-tools';
 export async function bootstrapGateway(ctx, agents, config, logger) {
     const manager = new SessionManager(ctx, agents, config, logger);
+    /**
+     * 语音链路诊断（仅在 config.debug 时输出）。
+     * 同时写 ~/.dsh/qqbot-voice-diag.log（便于事后排查合成/发送失败原因）。
+     */
+    function voiceDiag(msg) {
+        if (!config.debug)
+            return;
+        const line = `${new Date().toISOString()} ${msg}\n`;
+        try {
+            appendFileSync(join(homedir(), '.dsh', 'qqbot-voice-diag.log'), line, 'utf8');
+        }
+        catch { }
+        console.error(`[im-qqbot][diag] ${msg}`);
+    }
     // ── 生图可视化设置页（webServer 已在插件 inject 中声明，先于本插件启动，不会死锁） ──
     const IMG_CFG_FILE = join(homedir(), '.dsh', 'qqbot-imagegen.json');
     function readImageGenFile() {
@@ -345,14 +359,21 @@ document.getElementById('f').addEventListener('submit', async (e) => {
             catch { }
             return 'zh-CN-XiaoxuanNeural';
         }
-        async function generateVoice(text, voice, provider) {
+        /** 单次合成尝试；失败抛错（含服务端返回的具体原因）。 */
+        async function speakOnce(reqBody) {
             const resp = await fetch(`${TTS_BASE}/dsh-tts-api/speak`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text, voice: voice || readVoiceDefault(), provider: provider || 'edge-tts' }),
+                body: JSON.stringify(reqBody),
             });
-            if (!resp.ok)
-                throw new Error('TTS /speak 失败: HTTP ' + resp.status);
+            if (!resp.ok) {
+                let detail = '';
+                try {
+                    detail = (await resp.text()).slice(0, 300);
+                }
+                catch { }
+                throw new Error(`/speak HTTP ${resp.status} ${detail}`);
+            }
             const data = await resp.json();
             const url = data.url || (Array.isArray(data.chunks) && data.chunks[0]);
             if (!url)
@@ -362,9 +383,35 @@ document.getElementById('f').addEventListener('submit', async (e) => {
                 throw new Error('TTS 音频下载失败: HTTP ' + audio.status);
             return Buffer.from(await audio.arrayBuffer());
         }
+        /**
+         * 合成语音。若模型指定了 rvc（未配置 RVC 模型）或给了无效音色，
+         * 自动回退到 edge-tts + 面板默认音色，保证语音不会因参数问题发不出来。
+         */
+        async function generateVoice(text, voice, provider) {
+            const wanted = { text, voice: voice || readVoiceDefault(), provider: provider || 'edge-tts' };
+            const fallback = { text, voice: readVoiceDefault(), provider: 'edge-tts' };
+            const sameAsFallback = wanted.provider === 'edge-tts' && wanted.voice === fallback.voice;
+            const plan = sameAsFallback ? [wanted] : [wanted, fallback];
+            let lastErr;
+            for (let i = 0; i < plan.length; i += 1) {
+                const reqBody = plan[i];
+                voiceDiag(`voice: POST attempt${i + 1} ${JSON.stringify(reqBody).slice(0, 160)}`);
+                try {
+                    const buf = await speakOnce(reqBody);
+                    if (i > 0)
+                        voiceDiag('voice: recovered via edge-tts fallback');
+                    return buf;
+                }
+                catch (err) {
+                    lastErr = err;
+                    voiceDiag(`voice: attempt${i + 1} failed: ${err instanceof Error ? err.message : String(err)}`);
+                }
+            }
+            throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
+        }
         const disposeTts = toolsRegistry.register(defineTool({
             name: 'text_to_speech',
-            description: '把一句话转成语音并自动发送给当前聊天对象（大肥鱼用语音说话）。text 是要读的内容（用角色口吻、简短自然）；voice 可省略（默认女声晓晓 zh-CN-XiaoxuanNeural）；provider 可省略（edge-tts，或用 rvc 自定义音色）。生成后语音会自动发出去，你只需在回复里配合说一句。',
+            description: '把一句话转成语音并自动发送给当前聊天对象（大肥鱼用语音说话）。text 是要读的内容（用角色口吻、简短自然）。**voice 和 provider 都建议省略**：省略时自动使用「设置 → 插件 → 语音」面板里选定的音色（Edge TTS），最稳。只有在主人明确要求用「自定义音色 / RVC」时才传 provider="rvc"。生成后语音会自动发出去，你只需在回复里配合说一句。',
             parameters: {
                 text: { type: 'string', required: true, description: '要说的话（简短、自然、角色口吻）' },
                 voice: { type: 'string', description: '声音名，默认 zh-CN-XiaoxuanNeural（晓晓）' },
@@ -384,20 +431,36 @@ document.getElementById('f').addEventListener('submit', async (e) => {
                 }],
             },
             async execute(args, exec) {
+                voiceDiag(`voice: CALLED text="${String(args.text ?? '').slice(0, 40)}" voice=${JSON.stringify(args.voice ?? null)} provider=${JSON.stringify(args.provider ?? null)} cwd=${config.cwd || '(process)'}`);
                 const outDir = join(config.cwd || process.cwd(), '.qqbot-gen');
                 mkdirSync(outDir, { recursive: true });
                 const mp3 = join(outDir, `dfy_voice_${Date.now()}.mp3`);
-                const buf = await generateVoice(args.text, args.voice, args.provider);
+                let buf;
+                try {
+                    buf = await generateVoice(args.text, args.voice, args.provider);
+                }
+                catch (err) {
+                    const d = err instanceof Error ? (err.stack || err.message) : String(err);
+                    const resp = err && typeof err === 'object' && err.response ? ` status=${err.response.status}` : '';
+                    voiceDiag(`voice: FAIL generateVoice threw${resp}: ${d}`);
+                    throw err;
+                }
                 writeFileSync(mp3, buf);
                 let sent = false;
                 try {
                     const record = exec?.agent ? manager.findByAgent(exec.agent) : undefined;
+                    voiceDiag(`voice: hasAgent=${!!exec?.agent} record=${!!record} replyTarget=${JSON.stringify(record?.replyTarget ?? null)} file=${mp3} bytes=${buf.length}`);
                     if (record?.replyTarget) {
                         await bot.sendVoice(record.replyTarget, { localPath: mp3 });
                         sent = true;
+                        voiceDiag('voice: sendVoice OK');
+                    }
+                    else {
+                        voiceDiag('voice: FAIL no record/replyTarget -> not sent');
                     }
                 }
                 catch (err) {
+                    voiceDiag(`voice: FAIL sendVoice threw: ${err instanceof Error ? (err.stack || err.message) : String(err)}`);
                     logger.warn(`im-qqbot: sendVoice failed: ${err instanceof Error ? err.message : String(err)}`);
                 }
                 logger.info(`im-qqbot: voice → ${mp3} (${buf.length}B, sent=${sent})`);

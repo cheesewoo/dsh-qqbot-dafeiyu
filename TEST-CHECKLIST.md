@@ -20,9 +20,9 @@
 - [ ] 两个 profile 不同时连同一 appId
 
 ## B. 消息收发
-- [ ] 私聊 C2C 任意消息可收到并回复
+- [x] 私聊 C2C 任意消息可收到并回复（✅ B1 通过）
 - [ ] 群聊 `requireMention=true`：仅 @ 机器人触发
-- [ ] 群聊 `requireMention=false`：关键词/热闹触发
+- [ ] ~~群聊 `requireMention=false`：关键词/热闹触发~~ → ⏸ 平台未开通「群聊全量」(GROUP_MESSAGE_CREATE)，非 @ 消息不被推送；需先申请/审核（2026-09-03 确认：控制台事件订阅无此开关；@ 正常）
 - [ ] `groupTriggerKeywords`（大肥鱼/画画…）命中即响应
 - [ ] 热闹模式：窗口内消息达阈值进入、冷却期内不刷屏
 - [ ] ⚠️ 回声过滤（`skipSelfEcho:false` 修复前，机器人自己的消息可能自触发）
@@ -66,12 +66,13 @@
 - [ ] `/bot-status` 显示正确
 - [ ] 会话导出内容正确
 
-## H. 指令
-- [ ] `/bot-help`（页脚显示 v0.5.0）
-- [ ] `/bot-model`（无参列可用模型 / 有参切换）
-- [ ] `/bot-status` `/bot-reset` `/bot-clear` `/bot-new` `/bot-ping`
-- [ ] `/bot-version`（显示 v0.5.0）
-- [ ] `/bot-stop`（隐藏）能中止生成
+## H. 指令（2026-09-03 已测）
+- [x] `/bot-help`（页脚显示 v0.5.0）✅
+- [x] `/bot-model`（无参列可用模型；有参切换 ⏸暂未测）✅ 查看部分
+- [x] `/bot-status` `/bot-ping` `/bot-version` ✅
+- [x] `/bot-version`（显示 v0.5.0）✅
+- [ ] `/bot-reset` `/bot-clear` `/bot-new`（⏸ 未测）
+- [ ] `/bot-stop`（隐藏）能中止生成（⏸ 未测）
 
 ## I. 中间件链 / 输出
 - [ ] 引用解析、@marker 清洗、表情清洗

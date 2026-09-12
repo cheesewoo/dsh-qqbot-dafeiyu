@@ -23,6 +23,15 @@
     "plugin"
   ],
   "license": "MIT",
+  "author": "cheesewoo",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cheesewoo/dsh-qqbot-dafeiyu.git"
+  },
+  "homepage": "https://github.com/cheesewoo/dsh-qqbot-dafeiyu#readme",
+  "bugs": {
+    "url": "https://github.com/cheesewoo/dsh-qqbot-dafeiyu/issues"
+  },
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"

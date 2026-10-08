@@ -66,4 +66,11 @@
     requireMention: false
     textChunkLimit: 4500
     sessionIdleTimeout: 1800000
+    # 示例显式开启 open：插件默认是 allowlist（空名单 = 全部拒绝），本示例让它开箱即可用。
+    # 生产环境请改成 allowlist 并填入 openid，或保持 disabled。
+    access:
+      c2cMode: open
+      c2cAllow: []
+      groupMode: open
+      groupAllow: []
     debug: false

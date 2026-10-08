@@ -8,14 +8,27 @@ export function setupMiddlewares(bot, config, manager, logger) {
     // 2. 消息过滤：bot 回声 + 消息去重
     bot.use(messageFilter({ skipSelfEcho: false }));
     // 3. 访问控制（白名单/开放/禁用）
+    //    白名单直接透传：allowlist + 空名单 = 拒绝所有人（上游 accessPolicy 语义）。
+    //    不要再用 ['*'] 兜底空名单——那等于把"没配白名单"变成"放行所有人"。
+    const c2cMode = config.access.c2cMode;
+    const groupMode = config.access.groupMode;
+    if (c2cMode === 'open' || groupMode === 'open') {
+        logger.warn(`im-qqbot: 访问模式为 open（c2c=${c2cMode}, group=${groupMode}）——任何人/任何群都能驱动本机器人，且 IM 输入可在宿主机执行工具；如需限制请改为 allowlist 并配置白名单，或改为 disabled`);
+    }
+    if (c2cMode === 'allowlist' && config.access.c2cAllow.length === 0) {
+        logger.warn('im-qqbot: c2cMode=allowlist 但 c2cAllow 为空，所有私聊都会被拒绝；请填入对方 openid 或改为 open');
+    }
+    if (groupMode === 'allowlist' && config.access.groupAllow.length === 0) {
+        logger.warn('im-qqbot: groupMode=allowlist 但 groupAllow 为空，所有群聊都会被拒绝；请填入群 openid 或改为 open');
+    }
     bot.use(accessPolicy({
         c2c: {
-            mode: config.access.c2cMode,
-            allow: config.access.c2cAllow.length > 0 ? config.access.c2cAllow : ['*'],
+            mode: c2cMode,
+            allow: config.access.c2cAllow,
         },
         group: {
-            mode: config.access.groupMode,
-            allow: config.access.groupAllow.length > 0 ? config.access.groupAllow : ['*'],
+            mode: groupMode,
+            allow: config.access.groupAllow,
         },
         onBlock: (_mCtx, reason) => {
             if (config.debug) {

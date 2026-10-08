@@ -18,17 +18,20 @@ export const ConfigSchema = Schema.object({
     maxQueue: Schema.number().default(20).description('并发队列最大长度'),
     processingTimeoutMs: Schema.number().default(120000).description('处理超时(ms)'),
     historyLimit: Schema.number().default(10).description('群历史缓冲条数'),
+    // 访问控制：默认 allowlist（安全默认）。
+    // 语义提醒：allowlist + 空名单 = 全部拒绝（上游 accessPolicy 的行为），不是"全部放行"。
+    // 要对外服务必须显式写 open；open 模式下任何人找到机器人都能用，且 IM 输入可在宿主机执行工具。
     access: Schema.object({
-        c2cMode: Schema.union(['open', 'allowlist', 'disabled']).default('open').description('C2C访问模式'),
-        c2cAllow: Schema.array(Schema.string()).default([]).description('C2C白名单'),
-        groupMode: Schema.union(['open', 'allowlist', 'disabled']).default('open').description('群聊访问模式'),
-        groupAllow: Schema.array(Schema.string()).default([]).description('群聊白名单'),
+        c2cMode: Schema.union(['open', 'allowlist', 'disabled']).default('allowlist').description('C2C访问模式：open=所有人 / allowlist=仅白名单 / disabled=关闭'),
+        c2cAllow: Schema.array(Schema.string()).default([]).description('C2C白名单（对方 openid；allowlist 模式下为空即拒绝所有人）'),
+        groupMode: Schema.union(['open', 'allowlist', 'disabled']).default('allowlist').description('群聊访问模式：open=所有群 / allowlist=仅白名单 / disabled=关闭'),
+        groupAllow: Schema.array(Schema.string()).default([]).description('群聊白名单（群 openid；allowlist 模式下为空即拒绝所有群）'),
     }).default({
-        c2cMode: 'open',
+        c2cMode: 'allowlist',
         c2cAllow: [],
-        groupMode: 'open',
+        groupMode: 'allowlist',
         groupAllow: [],
-    }).description('访问控制'),
+    }).description('访问控制（安全默认 allowlist：需显式加白名单；open 表示对所有人开放）'),
     showToolResults: Schema.boolean().default(false).description('是否展示工具调用成功结果（错误始终展示）'),
     debug: Schema.boolean().default(false),
     // ── 生图（后端可配置，参考 dsh-roleplay 实现） ──

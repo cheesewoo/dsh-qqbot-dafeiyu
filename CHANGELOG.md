@@ -4,6 +4,14 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## [0.6.1] - 2026-10-09
+
+### 安全（破坏性变更）
+
+- **默认访问模式由 `open` 改为 `allowlist`**：`access.c2cMode` 与 `access.groupMode` 默认都是 `allowlist`。升级后如果配置里没写白名单，机器人将**不响应任何人**——需要把允许的 openid 填进 `access.c2cAllow` / `access.groupAllow`，或显式把模式写回 `open`。
+- **移除"空名单即放行所有人"的回退**：以前 `access.c2cAllow` 为空时内部会替换成 `['*']`，使 `allowlist` 模式形同 `open`。现在白名单原样传入上游 `accessPolicy`，空名单 = 拒绝所有人（与上游 SDK 语义一致）。
+- 启动时若任一场景为 `open`，或 `allowlist` 却空名单，日志会给出明确 warning，避免"以为限制了其实没限制"。
+
 ## [0.6.0] - 2026-09-11
 
 ### 变更

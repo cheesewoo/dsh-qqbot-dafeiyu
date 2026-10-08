@@ -1,6 +1,6 @@
 {
   "name": "dsh-qqbot-dafeiyu",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "QQ Bot (QQ 机器人) IM channel plugin for DeepSeek Harness (dsh): per-peer sessions, group @-mention and keyword triggers, image generation, TTS voice replies, attachment handling.",
   "type": "module",
   "main": "./dist/index.js",

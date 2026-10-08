@@ -26,8 +26,10 @@
         processingTimeoutMs: 120000
         historyLimit: 10
         access:
-          c2cMode: open
+          # 安全默认：白名单模式 + 空名单 = 全部拒绝（不是"放行所有人"）。
+          # 要让指定的人/群能用，把 openid 填进下面的列表；要对外完全开放，需显式写 open。
+          c2cMode: allowlist
           c2cAllow: []
-          groupMode: open
+          groupMode: allowlist
           groupAllow: []
         debug: false

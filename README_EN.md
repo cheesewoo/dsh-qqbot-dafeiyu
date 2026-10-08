@@ -65,7 +65,31 @@ pnpm dsh web --patch /path/to/dsh-qqbot/cordis.dev.yml
 | `directPrompt` | string | - | Extra system prompt for direct chats |
 | `textChunkLimit` | number | `4500` | Max chars per message |
 | `sessionIdleTimeout` | number | `1800000` | Session idle timeout (ms), default 30 min |
+| `access.c2cMode` | `open` \| `allowlist` \| `disabled` | **`allowlist`** | Direct-chat access mode (`disabled` = ignore direct chats) |
+| `access.c2cAllow` | string[] | `[]` | Direct-chat allowlist (sender openids) |
+| `access.groupMode` | `open` \| `allowlist` \| `disabled` | **`allowlist`** | Group access mode (`disabled` = ignore group chats) |
+| `access.groupAllow` | string[] | `[]` | Group allowlist (group openids) |
 | `debug` | boolean | `false` | Debug mode |
+
+## Access control (security)
+
+The default is **allowlist mode with an empty list — which denies everyone**: a freshly installed bot answers nobody until you add the openids you trust.
+
+| Mode | Behaviour |
+|------|------|
+| `allowlist` (default) | Only openids on the list; an empty list **denies everyone** |
+| `open` | Answers everyone / every group — **anyone who can reach the bot can use it**; a warning is logged at startup |
+| `disabled` | Turn that scope off entirely (direct or group) |
+
+```yaml
+access:
+  c2cMode: allowlist
+  c2cAllow: ['sender-openid']
+  groupMode: allowlist
+  groupAllow: ['group-openid']
+```
+
+⚠️ With `open`, IM messages drive the agent directly, and the agent carries tools (including shell and file access) — that exposes host capabilities to anyone who can DM or @-mention the bot. Use `allowlist` (or `disabled`) before exposing it. An empty list is never treated as "allow everyone"; it allows nobody.
 
 ## Built-in Commands
 

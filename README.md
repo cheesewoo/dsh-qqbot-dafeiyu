@@ -65,7 +65,31 @@ pnpm dsh web --patch /path/to/dsh-qqbot/cordis.dev.yml
 | `directPrompt` | string | - | 私聊额外 system prompt |
 | `textChunkLimit` | number | `4500` | 单条消息最大字符数 |
 | `sessionIdleTimeout` | number | `1800000` | 会话闲置超时(ms)，默认 30 分钟 |
+| `access.c2cMode` | `open` \| `allowlist` \| `disabled` | **`allowlist`** | 私聊访问模式（`disabled` = 不响应私聊） |
+| `access.c2cAllow` | string[] | `[]` | 私聊白名单（对方 openid） |
+| `access.groupMode` | `open` \| `allowlist` \| `disabled` | **`allowlist`** | 群聊访问模式（`disabled` = 不响应群聊） |
+| `access.groupAllow` | string[] | `[]` | 群聊白名单（群 openid） |
 | `debug` | boolean | `false` | 调试模式 |
+
+## 访问控制（安全相关）
+
+默认是**白名单模式 + 空名单 = 全部拒绝**：刚装好的机器人不响应任何人，先把允许的 openid 填进去它才会说话。
+
+| 模式 | 行为 |
+|------|------|
+| `allowlist`（默认） | 只响应白名单里的 openid；名单为空时**拒绝所有人** |
+| `open` | 响应所有人 / 所有群，**任何能找到这个机器人的人都能用**；启动时会打一条 warning |
+| `disabled` | 完全关闭该场景（私聊或群聊） |
+
+```yaml
+access:
+  c2cMode: allowlist
+  c2cAllow: ['对方的 openid']
+  groupMode: allowlist
+  groupAllow: ['群的 group_openid']
+```
+
+⚠️ `open` 模式下 IM 消息会直接驱动 agent，而 agent 带工具（含 shell / 文件读写），等于把宿主机能力开放给任何能私聊或 @ 到该机器人的人。对外暴露前请用 `allowlist`（或 `disabled`）。空名单**不会**被当成"放行所有人"，而是放行零个人。
 
 ## 内置命令
 

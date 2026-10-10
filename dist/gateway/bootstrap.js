@@ -146,6 +146,12 @@ document.getElementById('f').addEventListener('submit', async (e) => {
     const behavior = new BehaviorController(config, logger);
     bot.on('message', async (mCtx) => {
         const msg = mCtx.message;
+        // 访问控制需要群/私聊的 openid；把到达的每条消息的身份打到 INFO，
+        // 便于配置 access.groupAllow（QQ 不在消息里显示 openid，只能这样取）。
+        // 只在 debug 时输出，避免正常运行时刷日志。
+        if (config.debug) {
+            logger.info(`im-qqbot: 入站身份 kind=${msg.kind} senderId=${msg.senderId ?? ''} groupOpenid=${msg.groupOpenid ?? ''}`);
+        }
         const decision = behavior.decide(msg, mCtx.state?.mention);
         if (decision.type === 'fixed') {
             try {

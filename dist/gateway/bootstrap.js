@@ -11,6 +11,12 @@ import { spawn } from 'node:child_process';
 import { defineTool } from '@deepseek-ai/dsh-tools';
 export async function bootstrapGateway(ctx, agents, config, logger) {
     const manager = new SessionManager(ctx, agents, config, logger);
+    // 启动心跳：桌面端（Electron）看不到 stdout 日志，用它确认「这轮启动到底有没有加载本插件」。
+    // 只写文件，不影响行为；不再需要时可以整段删除。
+    try {
+        appendFileSync(join(homedir(), '.dsh', 'qqbot-boot.log'), `[${new Date().toISOString()}] bootstrapGateway started appId=${config.appId ?? ''} debug=${config.debug === true}\n`, 'utf8');
+    }
+    catch { }
     /**
      * 语音链路诊断（仅在 config.debug 时输出）。
      * 同时写 ~/.dsh/qqbot-voice-diag.log（便于事后排查合成/发送失败原因）。
@@ -146,22 +152,18 @@ document.getElementById('f').addEventListener('submit', async (e) => {
     const behavior = new BehaviorController(config, logger);
     bot.on('message', async (mCtx) => {
         const msg = mCtx.message;
-        // 访问控制需要群/私聊的 openid；把到达的每条消息的身份打到 INFO，
-        // 便于配置 access.groupAllow（QQ 不在消息里显示 openid，只能这样取）。
-        // 只在 debug 时输出，避免正常运行时刷日志。
+        // 收条：无条件记录「处理到了哪条入站消息」的身份信息。
+        // 诊断用（QQ 不显示群 openid、桌面端看不到 stdout 日志）；采集完可整段删除。
+        try {
+            const dshHome = process.env.DSH_HOME?.trim() || join(homedir(), '.dsh');
+            mkdirSync(dshHome, { recursive: true });
+            appendFileSync(join(dshHome, 'qqbot-inbound-identity.log'), `[${new Date().toISOString()}]\nkind=${msg.kind ?? ''}\nsenderId=${msg.senderId ?? ''}\ngroupOpenid=${msg.groupOpenid ?? ''}\n` + '-'.repeat(60) + '\n', 'utf8');
+        }
+        catch {
+            // 诊断写入失败不影响消息处理
+        }
         if (config.debug) {
             logger.info(`im-qqbot: 入站身份 kind=${msg.kind} senderId=${msg.senderId ?? ''} groupOpenid=${msg.groupOpenid ?? ''}`);
-            // 桌面端（Electron）把 stdout 收进自己的管道，那里翻不到日志，
-            // 所以同一份身份再落一份文件到 $DSH_HOME/qqbot-inbound-identity.log。
-            // 采集完成、access.* 配好之后，这几行可以整段删除。
-            try {
-                const dshHome = process.env.DSH_HOME?.trim() || join(homedir(), '.dsh');
-                mkdirSync(dshHome, { recursive: true });
-                appendFileSync(join(dshHome, 'qqbot-inbound-identity.log'), `[${new Date().toISOString()}]\nkind=${msg.kind ?? ''}\nsenderId=${msg.senderId ?? ''}\ngroupOpenid=${msg.groupOpenid ?? ''}\n` + '-'.repeat(60) + '\n', 'utf8');
-            }
-            catch {
-                // 诊断写入失败不影响消息处理
-            }
         }
         const decision = behavior.decide(msg, mCtx.state?.mention);
         if (decision.type === 'fixed') {
